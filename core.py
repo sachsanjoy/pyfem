@@ -278,6 +278,28 @@ def run(t, a, fi, fn, n=1, amp_limit=None, snr_limit=None):
         i += 1
     return i
 '''
+#error estimation using random Montecarlo method
+def error_montec(t,a,numin,numax,mu,sigma,ofac,hifreq,nm=100):
+    print('Performing Montecarlo error estimation...')
+    imp_freq = np.zeros(1)
+    for i in range(nm):
+        # creating a random gaussian noise with the same dimension as the dataset from the noise levels of the data. 
+        noise = np.random.normal(mu, sigma, len(t)) 
+        a = a + noise
+        nu, per = utils.compute_periodogram(t, a, ofac,hifreq)
+        nuidx = (nu >= numin) & (nu <= numax)
+        use_nuidx = True
+        if use_nuidx == True:
+            # Limit the periodogram to selected frequency range.
+            nu = nu[nuidx]
+            per = per[nuidx]
+        print('Finding highest peak...')
+        new_freq = utils.find_highest_peak(nu, per)
+        imp_freq = np.vstack((imp_freq,new_freq))
+        #calculating mean estimation and standard error = std/sqrt(n)
+        print(np.median(imp_freq[1:]),np.std(imp_freq[1:])/np.sqrt(len(imp_freq[1:])))
+        #print(np.mean(aa),np.sqrt(np.mean(abs(aa - np.mean(aa))**2)))
+    #return new_nu
 
 def pysca(t, a, numin, numax, snr_width,n, hifreq, ofac=6.0):
     print('Computing periodogram...')
@@ -304,3 +326,11 @@ def pysca(t, a, numin, numax, snr_width,n, hifreq, ofac=6.0):
     print('Prewhitening...')
     new_ts = fit.prewhiten(t, a, new_freq, new_amp, new_phase)
     print(np.shape(new_ts))
+    # Compute noise for the last extracted frequency using the median
+    noise = utils.median_noise_level(nu, per, new_freq,snr_width)
+    snr = new_amp / noise
+    print('noise: ',noise,', snr:',snr)
+    error_montec(t,a,numin,numax,0,noise,ofac,hifreq,100)
+    #new_noise = 
+    #new_snr = 
+    
