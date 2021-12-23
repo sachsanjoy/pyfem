@@ -326,10 +326,6 @@ def pysca(t, a, numin, numax, snr_width,n, hifreq, ofac=6.0):
     print('Prewhitening...')
     new_ts = fit.prewhiten(t, a, new_freq, new_amp, new_phase)
     print(np.shape(new_ts))
-    import matplotlib.pyplot as plt
-    plt.plot(t,a,'-r')
-    plt.plot(t,new_ts,'-g')
-    plt.show()
     # Compute noise for the last extracted frequency using the median
     noise = utils.median_noise_level(nu, per, new_freq,snr_width)
     snr = new_amp / noise
