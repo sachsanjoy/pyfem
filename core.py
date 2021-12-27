@@ -326,10 +326,12 @@ def pysca(t, a, numin, numax, snr_width,n, hifreq, ofac=6.0):
     print('Prewhitening...')
     new_ts = fit.prewhiten(t, a, new_freq, new_amp, new_phase)
     print(np.shape(new_ts))
+
     import matplotlib.pyplot as plt
     plt.plot(t,a,'-r')
     plt.plot(t,new_ts,'-g')
     plt.show()
+    
     # Compute noise for the last extracted frequency using the median
     noise = utils.median_noise_level(nu, per, new_freq,snr_width)
     snr = new_amp / noise
@@ -337,4 +339,36 @@ def pysca(t, a, numin, numax, snr_width,n, hifreq, ofac=6.0):
     #error_montec(t,a,numin,numax,0,noise,ofac,hifreq,100)
     #new_noise = 
     #new_snr = 
-    
+
+def pysca_loop(t, a, numin, numax, snr_width,n, hifreq, ofac=6.0):
+    new_ts = a
+    for i in range(n):
+        orig_nu, orig_per = utils.compute_periodogram(t, new_ts, ofac,hifreq)
+        nuidx = (orig_nu >= numin) & (orig_nu <= numax)
+        use_nuidx = True
+        if use_nuidx == True:
+            # Limit the periodogram to selected frequency range.
+            nu = orig_nu[nuidx]
+            per = orig_per[nuidx]
+        new_freq = utils.find_highest_peak(nu, per)
+        # Fit original time series using already extracted mode parameters
+        amp, phase = 1, 0
+        new_amp, new_phase, ok, misc = fit.fit_timeseries(t,a, new_freq, amp, phase)
+        if not ok:
+            raise PyscaError('Harmonic fit failed for peak frequency %f' % (
+                new_freq[-1]) + ' [ier=%d]' % misc[3])
+        # Prewhiten the original time series using the new mode parameters
+        new_ts = fit.prewhiten(t, new_ts, new_freq, new_amp, new_phase)
+
+        import matplotlib.pyplot as plt
+        plt.plot(t,a,'-r')
+        plt.plot(t,new_ts,'-g')
+        plt.show()
+        # Compute noise for the last extracted frequency using the median
+        noise = utils.median_noise_level(nu, per, new_freq,snr_width)
+        snr = new_amp / noise
+        print(str(i)+') Freq: ', new_freq, ', Amp: ', new_amp[0], ', Phase: ', new_phase[0], 'noise: ',noise,', snr:',snr[0])
+
+        #error_montec(t,a,numin,numax,0,noise,ofac,hifreq,100)
+        #new_noise = 
+        #new_snr = 

@@ -34,6 +34,6 @@ n = int(sys.argv[5])
 dat = np.loadtxt(id)
 t = dat[:,0]
 a = dat[:,1]
-p = core.pysca(t, a, fi, fn, dn, n, fn, ofac=6.0)
+p = core.pysca_loop(t, a, fi, fn, dn, n, fn, ofac=6.0)
 #p.run(n)
 #write_params(id+'.pysc', p.result, fmt='ascii', clobber=True)
