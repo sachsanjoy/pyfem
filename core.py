@@ -285,8 +285,8 @@ def error_montec(t,a,numin,numax,mu,sigma,ofac,hifreq,nm=100):
     for i in range(nm):
         # creating a random gaussian noise with the same dimension as the dataset from the noise levels of the data. 
         noise = np.random.normal(mu, sigma, len(t)) 
-        a = a + noise
-        nu, per = utils.compute_periodogram(t, a, ofac,hifreq)
+        a1 = a + noise
+        nu, per = utils.compute_periodogram(t, a1, ofac,hifreq)
         nuidx = (nu >= numin) & (nu <= numax)
         use_nuidx = True
         if use_nuidx == True:
@@ -297,7 +297,7 @@ def error_montec(t,a,numin,numax,mu,sigma,ofac,hifreq,nm=100):
         new_freq = utils.find_highest_peak(nu, per)
         imp_freq = np.vstack((imp_freq,new_freq))
         #calculating mean estimation and standard error = std/sqrt(n)
-        print(np.median(imp_freq[1:]),np.std(imp_freq[1:])/np.sqrt(len(imp_freq[1:])))
+        print(np.median(imp_freq[1:])/86400.0,np.std(imp_freq[1:])*86400)
         #print(np.mean(aa),np.sqrt(np.mean(abs(aa - np.mean(aa))**2)))
     #return new_nu
 
@@ -342,6 +342,12 @@ def pysca(t, a, numin, numax, snr_width,n, hifreq, ofac=6.0):
 
 def pysca_loop(t, a, numin, numax, snr_width,n, hifreq, ofac=6.0):
     new_ts = a
+    pw_fq = np.zeros(1)
+    pw_amp= np.zeros(1)
+    pw_phase = np.zeros(1)
+    pw_snr = np.zeros(1)
+    pw_noise = np.zeros(1)
+
     for i in range(n):
         orig_nu, orig_per = utils.compute_periodogram(t, new_ts, ofac,hifreq)
         nuidx = (orig_nu >= numin) & (orig_nu <= numax)
@@ -360,15 +366,27 @@ def pysca_loop(t, a, numin, numax, snr_width,n, hifreq, ofac=6.0):
         # Prewhiten the original time series using the new mode parameters
         new_ts = fit.prewhiten(t, new_ts, new_freq, new_amp, new_phase)
 
-        import matplotlib.pyplot as plt
-        plt.plot(t,a,'-r')
-        plt.plot(t,new_ts,'-g')
-        plt.show()
+        #import matplotlib.pyplot as plt
+        #plt.plot(t,a,'-r')
+        #plt.plot(t,new_ts,'-g')
+        #plt.show()
         # Compute noise for the last extracted frequency using the median
         noise = utils.median_noise_level(nu, per, new_freq,snr_width)
         snr = new_amp / noise
-        print(str(i)+') Freq: ', new_freq, ', Amp: ', new_amp[0], ', Phase: ', new_phase[0], 'noise: ',noise,', snr:',snr[0])
-
-        #error_montec(t,a,numin,numax,0,noise,ofac,hifreq,100)
-        #new_noise = 
-        #new_snr = 
+        print(str(i)+') Freq: ', '%16.16f'%new_freq, ', Amp: ', '%16.16f'%new_amp[0], ', Phase: ', '%16.16f'%new_phase[0],', snr: ','%16.16f'%snr[0], ', noise: ','%16.16f'%noise)
+        pw_fq = np.vstack((pw_fq,new_freq))
+        pw_amp =  np.vstack((pw_amp,new_amp[0]))
+        pw_phase =  np.vstack((pw_phase,new_phase[0]))
+        pw_snr =  np.vstack((pw_snr,snr[0]))
+        pw_noise =  np.vstack((pw_noise,noise))
+        error_montec(t,a,numin,numax,0,noise,ofac,hifreq,)
+    
+    pw_data = np.column_stack((pw_fq[1:],pw_amp[1:]))
+    pw_data = np.column_stack((pw_data,pw_phase[1:]))
+    pw_data = np.column_stack((pw_data,pw_snr[1:]))
+    pw_data = np.column_stack((pw_data,pw_noise[1:]))
+    return pw_data
+        
+    error_montec(t,a,numin,numax,0,noise,ofac,hifreq,100)
+    #new_noise = 
+    #new_snr = 

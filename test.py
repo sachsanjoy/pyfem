@@ -30,10 +30,9 @@ fi = float(sys.argv[2])
 fn = float(sys.argv[3])
 dn = float(sys.argv[4])
 n = int(sys.argv[5])
-#t, a = read_timeseries('timeseries.fits')
+
 dat = np.loadtxt(id)
 t = dat[:,0]
 a = dat[:,1]
 p = core.pysca_loop(t, a, fi, fn, dn, n, fn, ofac=6.0)
-#p.run(n)
-#write_params(id+'.pysc', p.result, fmt='ascii', clobber=True)
+np.savetxt('pwdata.pw',p,fmt="%12.12f %12.12f %12.12f %12.12f %12.12f")
